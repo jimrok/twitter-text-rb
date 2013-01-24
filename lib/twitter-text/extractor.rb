@@ -100,7 +100,6 @@ module Twitter
     # index, and the end index in the <tt>text</tt>.
     def extract_mentioned_screen_names_with_indices(text) # :yields: username, start, end
       return [] unless text
-
       possible_screen_names = []
       extract_mentions_or_lists_with_indices(text) do |screen_name, list_slug, start_position, end_position|
         next unless list_slug.empty?
@@ -129,7 +128,6 @@ module Twitter
     # if this is a username mention.
     def extract_mentions_or_lists_with_indices(text) # :yields: username, list_slug, start, end
       return [] unless text =~ /[@＠]/
-
       possible_entries = []
       text.to_s.scan(Twitter::Regex[:valid_mention_or_list]) do |before, at, screen_name, list_slug|
         match_data = $~
