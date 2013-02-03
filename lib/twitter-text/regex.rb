@@ -162,9 +162,14 @@ module Twitter
     HASHTAG_ALPHANUMERIC = /[a-z0-9_#{LATIN_ACCENTS}#{NON_LATIN_HASHTAG_CHARS}#{CJ_HASHTAG_CHARACTERS}]/io
     HASHTAG_BOUNDARY = /\A|\z|[^&a-z0-9_#{LATIN_ACCENTS}#{NON_LATIN_HASHTAG_CHARS}#{CJ_HASHTAG_CHARACTERS}]/o
 
-    HASHTAG = /(#{HASHTAG_BOUNDARY})(#|＃)(#{HASHTAG_ALPHANUMERIC}*#{HASHTAG_ALPHA}#{HASHTAG_ALPHANUMERIC}*)/io
+    HASHTAG = /(#{HASHTAG_BOUNDARY})(&|&)(#{HASHTAG_ALPHANUMERIC}*#{HASHTAG_ALPHA}#{HASHTAG_ALPHANUMERIC}*)/io
+
+    #let number valid for input.
+    NUMBERHASHTAG = /(#{HASHTAG_BOUNDARY})(#|#)(#{HASHTAG_ALPHANUMERIC}*)/io
 
     REGEXEN[:valid_hashtag] = /#{HASHTAG}/io
+    REGEXEN[:valid_numberic_hashtag] = /#{NUMBERHASHTAG}/io
+
     # Used in Extractor for final filtering
     REGEXEN[:end_hashtag_match] = /\A(?:[#＃]|:\/\/)/o
 

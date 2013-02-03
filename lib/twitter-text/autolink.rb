@@ -15,12 +15,20 @@ module Twitter
     # Default CSS class for auto-linked cashtags
     DEFAULT_CASHTAG_CLASS = "tweet-url cashtag".freeze
 
+    # Default CSS class for auto-linked hashtags
+    DEFAULT_NUMBERIC_HASHTAG_CLASS ="tweet-url numberic_hashtag".freeze
+
     # Default URL base for auto-linked usernames
     DEFAULT_USERNAME_URL_BASE = "https://twitter.com/".freeze
     # Default URL base for auto-linked lists
     DEFAULT_LIST_URL_BASE = "https://twitter.com/".freeze
     # Default URL base for auto-linked hashtags
     DEFAULT_HASHTAG_URL_BASE = "https://twitter.com/#!/search?q=%23".freeze
+
+
+    #Default URL for numberic hash tag url
+    DEFAULT_NUMBERIC_HASHTAG_URL_BASE = "https://twitter.com/#!/search?q=%23".freeze
+
     # Default URL base for auto-linked cashtags
     DEFAULT_CASHTAG_URL_BASE = "https://twitter.com/#!/search?q=%24".freeze
 
@@ -31,11 +39,14 @@ module Twitter
       :list_class     => DEFAULT_LIST_CLASS,
       :username_class => DEFAULT_USERNAME_CLASS,
       :hashtag_class  => DEFAULT_HASHTAG_CLASS,
+      :numberic_hashtag_class  => DEFAULT_NUMBERIC_HASHTAG_CLASS,
       :cashtag_class  => DEFAULT_CASHTAG_CLASS,
 
       :username_url_base => DEFAULT_USERNAME_URL_BASE,
       :list_url_base     => DEFAULT_LIST_URL_BASE,
       :hashtag_url_base  => DEFAULT_HASHTAG_URL_BASE,
+
+      :numberic_hashtag_url_base  => DEFAULT_NUMBERIC_HASHTAG_URL_BASE,
       :cashtag_url_base  => DEFAULT_CASHTAG_URL_BASE,
 
       :invisible_tag_attrs => DEFAULT_INVISIBLE_TAG_ATTRS
@@ -68,6 +79,8 @@ module Twitter
           link_to_url(entity, chars, options, &block)
         elsif entity[:hashtag]
           link_to_hashtag(entity, chars, options, &block)
+        elsif entity[:numberic_hashtag]
+          link_to_numberic_hashtag(entity, chars, options, &block)
         elsif entity[:screen_name]
           link_to_screen_name(entity, chars, options, &block)
         elsif entity[:cashtag]
@@ -206,7 +219,7 @@ module Twitter
     # Options which should not be passed as HTML attributes
     OPTIONS_NOT_ATTRIBUTES = Set.new([
       :url_class, :list_class, :username_class, :hashtag_class, :cashtag_class,
-      :username_url_base, :list_url_base, :hashtag_url_base, :cashtag_url_base,
+      :username_url_base, :list_url_base, :hashtag_url_base, :numberic_hashtag_url_base,:cashtag_url_base,
       :username_url_block, :list_url_block, :hashtag_url_block, :cashtag_url_block, :link_url_block,
       :username_include_symbol, :suppress_lists, :suppress_no_follow, :url_entities,
       :invisible_tag_attrs, :symbol_tag, :text_with_symbol_tag, :url_target,
@@ -336,6 +349,32 @@ module Twitter
         options[:hashtag_url_block].call(hashtag)
       else
         "#{options[:hashtag_url_base]}#{hashtag}"
+      end
+
+      html_attrs = {
+        :class => hashtag_class,
+        # FIXME As our conformance test, hash in title should be half-width,
+        # this should be bug of conformance data.
+        :title => "##{hashtag}"
+      }.merge(options[:html_attrs])
+
+      link_to_text_with_symbol(entity, hash, hashtag, href, html_attrs, options)
+    end
+
+    def link_to_numberic_hashtag(entity, chars, options = {})
+      hash = chars[entity[:indices].first]
+      hashtag = entity[:numberic_hashtag]
+      hashtag = yield(hashtag) if block_given?
+      hashtag_class = options[:numberic_hashtag_class]
+
+      if hashtag.match Twitter::Regex::REGEXEN[:rtl_chars]
+        hashtag_class += ' rtl'
+      end
+
+      href = if options[:hashtag_url_block]
+        options[:hashtag_url_block].call(hashtag)
+      else
+        "#{options[:numberic_hashtag_url_base]}#{hashtag}"
       end
 
       html_attrs = {

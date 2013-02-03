@@ -70,7 +70,8 @@ module Twitter
       entities = extract_urls_with_indices(text, options) +
                  extract_hashtags_with_indices(text, :check_url_overlap => false) +
                  extract_mentions_or_lists_with_indices(text) +
-                 extract_cashtags_with_indices(text)
+                 extract_cashtags_with_indices(text) +
+                 extract_numberic_hashtags_with_indices(text)
 
       return [] if entities.empty?
 
@@ -254,8 +255,9 @@ module Twitter
     # character.
     #
     # If a block is given then it will be called for each hashtag.
+    # change the default '#' to &. //liujiang
     def extract_hashtags_with_indices(text, options = {:check_url_overlap => true}) # :yields: hashtag_text, start, end
-      return [] unless text =~ /[#＃]/
+      return [] unless text =~ /[&]/
 
       tags = []
       text.scan(Twitter::Regex[:valid_hashtag]) do |before, hash, hash_text|
@@ -266,6 +268,47 @@ module Twitter
         unless after =~ Twitter::Regex[:end_hashtag_match]
           tags << {
             :hashtag => hash_text,
+            :indices => [start_position, end_position]
+          }
+        end
+      end
+
+      if options[:check_url_overlap]
+        # extract URLs
+        urls = extract_urls_with_indices(text)
+        unless urls.empty?
+          tags.concat(urls)
+          # remove duplicates
+          tags = remove_overlapping_entities(tags)
+          # remove URL entities
+          tags.reject!{|entity| !entity[:hashtag] }
+        end
+      end
+
+      tags.each{|tag| yield tag[:hashtag], tag[:indices].first, tag[:indices].last} if block_given?
+      tags
+    end
+
+    # Extracts a list of all hashtags included in the Tweet <tt>text</tt>. If the
+    # <tt>text</tt> is <tt>nil</tt> or contains no hashtags an empty array
+    # will be returned. The array returned will not include the leading <tt>#</tt>
+    # character.
+    #
+    # If a block is given then it will be called for each hashtag.
+    def extract_numberic_hashtags_with_indices(text, options = {:check_url_overlap => true}) # :yields: hashtag_text, start, end
+      return [] unless text =~ /[#＃]/
+
+      tags = []
+      
+      text.scan(Twitter::Regex[:valid_numberic_hashtag]) do |before, hash, hash_text|
+        
+        match_data = $~
+        start_position = match_data.char_begin(2)
+        end_position = match_data.char_end(3)
+        after = $'
+        unless after =~ Twitter::Regex[:end_hashtag_match]
+          tags << {
+            :numberic_hashtag => hash_text,
             :indices => [start_position, end_position]
           }
         end
@@ -323,4 +366,5 @@ module Twitter
       tags
     end
   end
+
 end
