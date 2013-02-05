@@ -257,7 +257,7 @@ module Twitter
     # If a block is given then it will be called for each hashtag.
     # change the default '#' to &. //liujiang
     def extract_hashtags_with_indices(text, options = {:check_url_overlap => true}) # :yields: hashtag_text, start, end
-      return [] unless text =~ /[&]/
+      return [] unless text =~ /[#＃]/
 
       tags = []
       text.scan(Twitter::Regex[:valid_hashtag]) do |before, hash, hash_text|

@@ -68,7 +68,6 @@ module Twitter
 
     def auto_link_entities(text, entities, options = {}, &block)
       return text if entities.empty?
-
       # NOTE deprecate these attributes not options keys in options hash, then use html_attrs
       options = DEFAULT_OPTIONS.merge(options)
       options[:html_attrs] = extract_html_attrs_from_options!(options)
@@ -218,9 +217,9 @@ module Twitter
 
     # Options which should not be passed as HTML attributes
     OPTIONS_NOT_ATTRIBUTES = Set.new([
-      :url_class, :list_class, :username_class, :hashtag_class, :cashtag_class,
+      :url_class, :list_class, :username_class, :hashtag_class,:numberic_hashtag_class, :cashtag_class,
       :username_url_base, :list_url_base, :hashtag_url_base, :numberic_hashtag_url_base,:cashtag_url_base,
-      :username_url_block, :list_url_block, :hashtag_url_block, :cashtag_url_block, :link_url_block,
+      :username_url_block, :list_url_block, :hashtag_url_block,:numberic_hashtag_url_block, :cashtag_url_block, :link_url_block,
       :username_include_symbol, :suppress_lists, :suppress_no_follow, :url_entities,
       :invisible_tag_attrs, :symbol_tag, :text_with_symbol_tag, :url_target,
       :link_attribute_block, :link_text_block
@@ -336,6 +335,7 @@ module Twitter
     end
 
     def link_to_hashtag(entity, chars, options = {})
+
       hash = chars[entity[:indices].first]
       hashtag = entity[:hashtag]
       hashtag = yield(hashtag) if block_given?
@@ -357,6 +357,7 @@ module Twitter
         # this should be bug of conformance data.
         :title => "##{hashtag}"
       }.merge(options[:html_attrs])
+
 
       link_to_text_with_symbol(entity, hash, hashtag, href, html_attrs, options)
     end

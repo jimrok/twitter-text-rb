@@ -5,9 +5,8 @@ reason for this is to unify the various auto-linking and extraction of
 usernames, lists, hashtags and URLs.
 
 # This is a modify version of twitter-text, we add such feather to this gem file.
-* add the chinese charset support in to @ targ.
-* change the default hashtag symbol from '#' to '&'
-* add an enhancement to hashtag by  support numberic tag with symbol '#' 
+* add the chinese charset support in to @ targ, for example: @大雄.
+* add an enhancement to hashtag by  support numberic tag with symbol '#', for example "#123" will link to numberic_hashtag.
 
 == Extraction Examples
 
