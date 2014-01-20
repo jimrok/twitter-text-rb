@@ -1,10 +1,13 @@
+require 'unf'
+
 module Twitter
   module Validation extend self
     MAX_LENGTH = 140
 
     DEFAULT_TCO_URL_LENGTHS = {
-      :short_url_length => 20,
-      :short_url_length_https => 21
+      :short_url_length => 22,
+      :short_url_length_https => 23,
+      :characters_reserved_per_media => 22
     }.freeze
 
     # Returns the length of the string as it would be displayed. This is equivilent to the length of the Unicode NFC
@@ -22,7 +25,7 @@ module Twitter
     def tweet_length(text, options = {})
       options = DEFAULT_TCO_URL_LENGTHS.merge(options)
 
-      length = ActiveSupport::Multibyte::Chars.new(text).normalize(:c).length
+      length = text.to_nfc.unpack("U*").length
 
       Twitter::Extractor.extract_urls_with_indices(text) do |url, start_position, end_position|
         length += start_position - end_position
@@ -46,7 +49,7 @@ module Twitter
       begin
         return :too_long if tweet_length(text) > MAX_LENGTH
         return :invalid_characters if Twitter::Regex::INVALID_CHARACTERS.any?{|invalid_char| text.include?(invalid_char) }
-      rescue ArgumentError, ActiveSupport::Multibyte::EncodingError => e
+      rescue ArgumentError => e
         # non-Unicode value.
         return :invalid_characters
       end

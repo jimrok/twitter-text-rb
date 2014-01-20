@@ -1,10 +1,13 @@
+require 'multi_json'
+require 'nokogiri'
 require 'test/unit'
 require 'yaml'
-require 'nokogiri'
 
-# Ruby 1.8 encoding check
+# Detect Ruby 1.8 and older to apply necessary encoding fixes
 major, minor, patch = RUBY_VERSION.split('.')
-if major.to_i == 1 && minor.to_i < 9
+OLD_RUBY = major.to_i == 1 && minor.to_i < 9
+
+if OLD_RUBY
   $KCODE='u'
 end
 
@@ -18,9 +21,21 @@ class ConformanceTest < Test::Unit::TestCase
 
   private
 
-  %w(description expected text json hits).each do |key|
+  %w(description expected json hits).each do |key|
     define_method key.to_sym do
       @test_info[key]
+    end
+  end
+
+  if OLD_RUBY
+    def text
+      @test_info['text'].gsub(/\\u([0-9a-f]{8})/i) do
+        [$1.to_i(16)].pack('U*')
+      end
+    end
+  else
+    def text
+      @test_info['text']
     end
   end
 
@@ -52,8 +67,10 @@ class ConformanceTest < Test::Unit::TestCase
     yaml = YAML.load_file(File.join(CONFORMANCE_DIR, file))
     raise  "No such test suite: #{test_type.to_s}" unless yaml["tests"][test_type.to_s]
 
+    file_name = file.split('.').first
+
     yaml["tests"][test_type.to_s].each do |test_info|
-      name = :"test_#{test_type}_#{test_info['description']}"
+      name = :"test_#{file_name}_#{test_type} #{test_info['description']}"
       define_method name do
         @test_info = test_info
         instance_eval(&block)
@@ -138,7 +155,7 @@ class ConformanceTest < Test::Unit::TestCase
   end
 
   def_conformance_test("autolink.yml", :json) do
-    assert_equal_without_attribute_order expected, auto_link_with_json(text, ActiveSupport::JSON.decode(json), :suppress_no_follow => true), description
+    assert_equal_without_attribute_order expected, auto_link_with_json(text, MultiJson.load(json), :suppress_no_follow => true), description
   end
 
   # HitHighlighter Conformance

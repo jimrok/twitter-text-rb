@@ -1,4 +1,3 @@
-#!/usr/bin/env rake
 require 'bundler'
 include Rake::DSL
 Bundler::GemHelper.install_tasks
@@ -47,7 +46,7 @@ namespace :test do
   end
 
   desc "Run conformance test suite"
-  task :conformance => ['conformance:latest', 'conformance:run'] do
+  task :conformance => ['conformance:update', 'conformance:run'] do
   end
 end
 

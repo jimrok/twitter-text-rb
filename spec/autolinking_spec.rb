@@ -23,6 +23,14 @@ describe Twitter::Autolink do
         end
       end
 
+      context "username in camelCase" do
+        def original_text() "@jaCob iS cOoL" end
+
+        it "should be linked" do
+          @autolinked_text.should link_to_screen_name('jaCob')
+        end
+      end
+
       context "username at beginning of line" do
         def original_text; "@jacob you're cool"; end
 
@@ -488,9 +496,8 @@ describe Twitter::Autolink do
         context "with a username not followed by a /" do
           def original_text; 'http://example.com/@foobar'; end
 
-          it "should link small url and username" do
-            @autolinked_text.should have_autolinked_url('http://example.com/')
-            @autolinked_text.should link_to_screen_name('foobar')
+          it "should link url" do
+            @autolinked_text.should have_autolinked_url('http://example.com/@foobar')
           end
         end
 

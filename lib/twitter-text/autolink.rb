@@ -1,6 +1,7 @@
 # encoding: UTF-8
 
 require 'set'
+require 'twitter-text/hash_helper'
 
 module Twitter
   # A module for including Tweet auto-linking in a class. The primary use of this is for helpers/views so they can auto-link
@@ -58,7 +59,7 @@ module Twitter
 
       # map JSON entity to twitter-text entity
       entities.each do |entity|
-        entity.symbolize_keys!
+        HashHelper.symbolize_keys!(entity)
         # hashtag
         entity[:hashtag] = entity[:text] if entity[:text]
       end
@@ -73,7 +74,7 @@ module Twitter
       options[:html_attrs] = extract_html_attrs_from_options!(options)
       options[:html_attrs][:rel] ||= "nofollow" unless options[:suppress_no_follow]
 
-      Twitter::Rewriter.rewrite_entities(text, entities) do |entity, chars|
+      Twitter::Rewriter.rewrite_entities(text.dup, entities) do |entity, chars|
         if entity[:url]
           link_to_url(entity, chars, options, &block)
         elsif entity[:hashtag]
@@ -238,7 +239,7 @@ module Twitter
 
     def url_entities_hash(url_entities)
       (url_entities || {}).inject({}) do |entities, entity|
-        entity = entity.symbolize_keys
+        HashHelper.symbolize_keys!(entity)
         entities[entity[:url]] = entity
         entities
       end
@@ -409,9 +410,9 @@ module Twitter
 
     def link_to_screen_name(entity, chars, options = {})
       name  = "#{entity[:screen_name]}#{entity[:list_slug]}"
-      chunk = name
-      chunk = yield(name) if block_given?
-      name.downcase!
+
+      chunk = name.dup
+      chunk = yield(chunk) if block_given?
 
       at = chars[entity[:indices].first]
 
@@ -477,5 +478,6 @@ module Twitter
         attrs
       end
     end
+
   end
 end

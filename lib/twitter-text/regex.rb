@@ -174,7 +174,7 @@ module Twitter
     # Used in Extractor for final filtering
     REGEXEN[:end_hashtag_match] = /\A(?:[#＃]|:\/\/)/o
 
-    REGEXEN[:valid_mention_preceding_chars] = /(?:[^a-zA-Z0-9_!#\$%&*@＠]|^|RT:?)/o
+    REGEXEN[:valid_mention_preceding_chars] = /(?:[^a-zA-Z0-9_!#\$%&*@＠]|^|[rR][tT]:?)/o
     REGEXEN[:at_signs] = /[@＠]/
     REGEXEN[:valid_mention_or_list] = /
       (#{REGEXEN[:valid_mention_preceding_chars]})  # $1: Preceeding character
@@ -193,16 +193,25 @@ module Twitter
     REGEXEN[:valid_subdomain] = /(?:(?:#{DOMAIN_VALID_CHARS}(?:[_-]|#{DOMAIN_VALID_CHARS})*)?#{DOMAIN_VALID_CHARS}\.)/io
     REGEXEN[:valid_domain_name] = /(?:(?:#{DOMAIN_VALID_CHARS}(?:[-]|#{DOMAIN_VALID_CHARS})*)?#{DOMAIN_VALID_CHARS}\.)/io
 
-    REGEXEN[:valid_gTLD] = /(?:(?:aero|asia|biz|cat|com|coop|edu|gov|info|int|jobs|mil|mobi|museum|name|net|org|pro|tel|travel|xxx)(?=[^0-9a-z]|$))/i
+    REGEXEN[:valid_gTLD] = %r{
+      (?:
+        (?:academy|aero|asia|bike|biz|buzz|cab|camera|camp|careers|cat|center|clothing|com|company|computer|construction|contractors|coop|
+        diamonds|directory|domains|edu|enterprises|equipment|estate|gallery|gov|graphics|guru|holdings|info|int|jobs|kitchen|land|lighting|
+        limo|management|menu|mil|mobi|museum|name|net|org|photography|photos|plumbing|post|pro|recipes|ruhr|sexy|shoes|singles|support|
+        systems|tattoo|technology|tel|tips|today|travel|uno|ventures|viajes|voyage|xxx)
+        (?=[^0-9a-z@]|$)
+      )
+    }ix
+
     REGEXEN[:valid_ccTLD] = %r{
       (?:
         (?:ac|ad|ae|af|ag|ai|al|am|an|ao|aq|ar|as|at|au|aw|ax|az|ba|bb|bd|be|bf|bg|bh|bi|bj|bm|bn|bo|br|bs|bt|bv|bw|by|bz|ca|cc|cd|cf|cg|ch|
         ci|ck|cl|cm|cn|co|cr|cs|cu|cv|cx|cy|cz|dd|de|dj|dk|dm|do|dz|ec|ee|eg|eh|er|es|et|eu|fi|fj|fk|fm|fo|fr|ga|gb|gd|ge|gf|gg|gh|gi|gl|gm|
         gn|gp|gq|gr|gs|gt|gu|gw|gy|hk|hm|hn|hr|ht|hu|id|ie|il|im|in|io|iq|ir|is|it|je|jm|jo|jp|ke|kg|kh|ki|km|kn|kp|kr|kw|ky|kz|la|lb|lc|li|
         lk|lr|ls|lt|lu|lv|ly|ma|mc|md|me|mg|mh|mk|ml|mm|mn|mo|mp|mq|mr|ms|mt|mu|mv|mw|mx|my|mz|na|nc|ne|nf|ng|ni|nl|no|np|nr|nu|nz|om|pa|pe|
-        pf|pg|ph|pk|pl|pm|pn|pr|ps|pt|pw|py|qa|re|ro|rs|ru|rw|sa|sb|sc|sd|se|sg|sh|si|sj|sk|sl|sm|sn|so|sr|ss|st|su|sv|sy|sz|tc|td|tf|tg|th|
-        tj|tk|tl|tm|tn|to|tp|tr|tt|tv|tw|tz|ua|ug|uk|us|uy|uz|va|vc|ve|vg|vi|vn|vu|wf|ws|ye|yt|za|zm|zw)
-        (?=[^0-9a-z]|$)
+        pf|pg|ph|pk|pl|pm|pn|pr|ps|pt|pw|py|qa|re|ro|rs|ru|rw|sa|sb|sc|sd|se|sg|sh|si|sj|sk|sl|sm|sn|so|sr|ss|st|su|sv|sx|sy|sz|tc|td|tf|tg|
+        th|tj|tk|tl|tm|tn|to|tp|tr|tt|tv|tw|tz|ua|ug|uk|us|uy|uz|va|vc|ve|vg|vi|vn|vu|wf|ws|ye|yt|za|zm|zw)
+        (?=[^0-9a-z@]|$)
       )
     }ix
     REGEXEN[:valid_punycode] = /(?:xn--[0-9a-z]+)/i
@@ -226,24 +235,39 @@ module Twitter
 
     REGEXEN[:valid_port_number] = /[0-9]+/
 
-    REGEXEN[:valid_general_url_path_chars] = /[a-z0-9!\*';:=\+\,\.\$\/%#\[\]\-_~&|#{LATIN_ACCENTS}]/io
-    # Allow URL paths to contain balanced parens
+    REGEXEN[:valid_general_url_path_chars] = /[a-z0-9!\*';:=\+\,\.\$\/%#\[\]\-_~&|@#{LATIN_ACCENTS}]/io
+    # Allow URL paths to contain up to two nested levels of balanced parens
     #  1. Used in Wikipedia URLs like /Primer_(film)
     #  2. Used in IIS sessions like /S(dfd346)/
-    REGEXEN[:valid_url_balanced_parens] = /\(#{REGEXEN[:valid_general_url_path_chars]}+\)/io
+    #  3. Used in Rdio URLs like /track/We_Up_(Album_Version_(Edited))/
+    REGEXEN[:valid_url_balanced_parens] = /
+      \(
+        (?:
+          #{REGEXEN[:valid_general_url_path_chars]}+
+          |
+          # allow one nested level of balanced parentheses
+          (?:
+            #{REGEXEN[:valid_general_url_path_chars]}*
+            \(
+              #{REGEXEN[:valid_general_url_path_chars]}+
+            \)
+            #{REGEXEN[:valid_general_url_path_chars]}*
+          )
+        )
+      \)
+    /iox
     # Valid end-of-path chracters (so /foo. does not gobble the period).
     #   1. Allow =&# for empty URL parameters and other URL-join artifacts
     REGEXEN[:valid_url_path_ending_chars] = /[a-z0-9=_#\/\+\-#{LATIN_ACCENTS}]|(?:#{REGEXEN[:valid_url_balanced_parens]})/io
-    # Allow @ in a url, but only in the middle. Catch things like http://example.com/@user/
     REGEXEN[:valid_url_path] = /(?:
       (?:
         #{REGEXEN[:valid_general_url_path_chars]}*
         (?:#{REGEXEN[:valid_url_balanced_parens]} #{REGEXEN[:valid_general_url_path_chars]}*)*
         #{REGEXEN[:valid_url_path_ending_chars]}
-      )|(?:@#{REGEXEN[:valid_general_url_path_chars]}+\/)
+      )|(?:#{REGEXEN[:valid_general_url_path_chars]}+\/)
     )/iox
 
-    REGEXEN[:valid_url_query_chars] = /[a-z0-9!?\*'\(\);:&=\+\$\/%#\[\]\-_\.,~|]/i
+    REGEXEN[:valid_url_query_chars] = /[a-z0-9!?\*'\(\);:&=\+\$\/%#\[\]\-_\.,~|@]/i
     REGEXEN[:valid_url_query_ending_chars] = /[a-z0-9_&=#\/]/i
     REGEXEN[:valid_url] = %r{
       (                                                                                     #   $1 total match
@@ -256,7 +280,7 @@ module Twitter
           (\?#{REGEXEN[:valid_url_query_chars]}*#{REGEXEN[:valid_url_query_ending_chars]})? #   $8 Query String
         )
       )
-    }iox;
+    }iox
 
     REGEXEN[:cashtag] = /[a-z]{1,6}(?:[._][a-z]{1,2})?/i
     REGEXEN[:valid_cashtag] = /(^|#{REGEXEN[:spaces]})(\$)(#{REGEXEN[:cashtag]})(?=$|\s|[#{PUNCTUATION_CHARS}])/i

@@ -9,6 +9,7 @@ end
 $:.push File.join(File.dirname(__FILE__), '..', 'lib')
 
 require 'nokogiri'
+require 'json'
 require 'simplecov'
 SimpleCov.start do
   add_group 'Libraries', 'lib'
@@ -58,7 +59,7 @@ RSpec::Matchers.define :link_to_screen_name do |screen_name, inner_text|
     @link = Nokogiri::HTML(text).search("a.username")
     @link &&
     @link.inner_text == expected &&
-    "https://twitter.com/#{screen_name}".downcase.should == @link.first['href']
+    "https://twitter.com/#{screen_name}".should == @link.first['href']
   end
 
   failure_message_for_should do |text|
