@@ -201,6 +201,7 @@ module Twitter
           next if !options[:extract_url_without_protocol] || before =~ Twitter::Regex[:invalid_url_without_protocol_preceding_chars]
           last_url = nil
           last_url_invalid_match = nil
+          return [] if domain.nil?
           domain.scan(Twitter::Regex[:valid_ascii_domain]) do |ascii_domain|
             last_url = {
               :url => ascii_domain,
