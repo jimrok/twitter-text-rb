@@ -275,7 +275,7 @@ module Twitter
         (                                                                                   #   $3 URL
           ((https?|ftp):\/\/)?  
                                                                  #   $4 Protocol (optional)
-          ((?:.+:.+@)?(?:#{REGEXEN[:valid_domain]}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)\.){3}(25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|[1-9])))                                                       #   $5 Domain(s)
+          ((?:(?:[a-z0-9\-._~]+?:)?[a-z0-9\-._~]+?@)?(?:#{REGEXEN[:valid_domain]}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|\d)\.){3}(25[0-5]|2[0-4]\d|1\d\d|[1-9]\d|[1-9])))                                                       #   $5 Domain(s)
           (?::(#{REGEXEN[:valid_port_number]}))?                                            #   $6 Port number (optional)
           (/#{REGEXEN[:valid_url_path]}*)?                                                  #   $7 URL Path and anchor
           (\?#{REGEXEN[:valid_url_query_chars]}*#{REGEXEN[:valid_url_query_ending_chars]})? #   $8 Query String
