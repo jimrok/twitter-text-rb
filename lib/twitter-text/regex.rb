@@ -173,6 +173,7 @@ module Twitter
 
     # Used in Extractor for final filtering
     REGEXEN[:end_hashtag_match] = /\A(?:[#＃]|:\/\/)/o
+    REGEXEN[:sharp_end_hashtag_match] = /\A(?:[#＃]|\s)/o
 
     REGEXEN[:valid_mention_preceding_chars] = /(?:[^a-zA-Z0-9_!#\$%&*@＠]|^|[rR][tT]:?)/o
     REGEXEN[:at_signs] = /[@＠]/

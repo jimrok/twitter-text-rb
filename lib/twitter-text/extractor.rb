@@ -68,10 +68,10 @@ module Twitter
     def extract_entities_with_indices(text, options = {}, &block)
       # extract all entities
       entities = extract_urls_with_indices(text, options) +
-                 extract_hashtags_with_indices(text, :check_url_overlap => false) +
-                 extract_mentions_or_lists_with_indices(text) +
-                 extract_cashtags_with_indices(text) +
-                 extract_numberic_hashtags_with_indices(text)
+        extract_hashtags_with_indices(text, :check_url_overlap => false) +
+        extract_mentions_or_lists_with_indices(text) +
+        extract_cashtags_with_indices(text) +
+        extract_numberic_hashtags_with_indices(text)
 
       return [] if entities.empty?
 
@@ -163,120 +163,127 @@ module Twitter
       possible_screen_name = text.match(Twitter::Regex[:valid_reply])
       return unless possible_screen_name.respond_to?(:captures)
       return if $' =~ Twitter::Regex[:end_mention_match]
-      screen_name = possible_screen_name.captures.first
-      yield screen_name if block_given?
-      screen_name
-    end
-
-    # Extracts a list of all URLs included in the Tweet <tt>text</tt>. If the
-    # <tt>text</tt> is <tt>nil</tt> or contains no URLs an empty array
-    # will be returned.
-    #
-    # If a block is given then it will be called for each URL.
-    def extract_urls(text, &block) # :yields: url
-      urls = extract_urls_with_indices(text).map{|u| u[:url]}
-      urls.each(&block) if block_given?
-      urls
-    end
-
-    # Extracts a list of all URLs included in the Tweet <tt>text</tt> along
-    # with the indices. If the <tt>text</tt> is <tt>nil</tt> or contains no
-    # URLs an empty array will be returned.
-    #
-    # If a block is given then it will be called for each URL.
-    def extract_urls_with_indices(text, options = {:extract_url_without_protocol => true}) # :yields: url, start, end
-      return [] unless text && (options[:extract_url_without_protocol] ? text.index(".") : text.index(":"))
-      urls = []
-      position = 0
-
-      text.to_s.scan(Twitter::Regex[:valid_url]) do |all, before, url, protocol, domain, port, path, query|
-        valid_url_match_data = $~
-
-        start_position = valid_url_match_data.char_begin(3)
-        end_position = valid_url_match_data.char_end(3)
-
-        # If protocol is missing and domain contains non-ASCII characters,
-        # extract ASCII-only domains.
-        if !protocol
-          next if !options[:extract_url_without_protocol] || before =~ Twitter::Regex[:invalid_url_without_protocol_preceding_chars]
-          last_url = nil
-          last_url_invalid_match = nil
-          return [] if domain.nil?
-          domain.scan(Twitter::Regex[:valid_ascii_domain]) do |ascii_domain|
-            last_url = {
-              :url => ascii_domain,
-              :indices => [start_position + $~.char_begin(0),
-                           start_position + $~.char_end(0)]
-            }
-            last_url_invalid_match = ascii_domain =~ Twitter::Regex[:invalid_short_domain]
-            urls << last_url unless last_url_invalid_match
-          end
-
-          # no ASCII-only domain found. Skip the entire URL
-          next unless last_url
-
-          # last_url only contains domain. Need to add path and query if they exist.
-          if path
-            # last_url was not added. Add it to urls here.
-            urls << last_url if last_url_invalid_match
-            last_url[:url] = url.sub(domain, last_url[:url])
-            last_url[:indices][1] = end_position
-          end
-        else
-          # In the case of t.co URLs, don't allow additional path characters
-          if url =~ Twitter::Regex[:valid_tco_url]
-            url = $&
-            end_position = start_position + url.char_length
-          end
-          urls << {
-            :url => url,
-            :indices => [start_position, end_position]
-          }
-        end
+        screen_name = possible_screen_name.captures.first
+        yield screen_name if block_given?
+        screen_name
       end
-      urls.each{|url| yield url[:url], url[:indices].first, url[:indices].last} if block_given?
-      urls
-    end
 
-    # Extracts a list of all hashtags included in the Tweet <tt>text</tt>. If the
-    # <tt>text</tt> is <tt>nil</tt> or contains no hashtags an empty array
-    # will be returned. The array returned will not include the leading <tt>#</tt>
-    # character.
-    #
-    # If a block is given then it will be called for each hashtag.
-    def extract_hashtags(text, &block) # :yields: hashtag_text
-      hashtags = extract_hashtags_with_indices(text).map{|h| h[:hashtag]}
-      hashtags.each(&block) if block_given?
-      hashtags
-    end
+      # Extracts a list of all URLs included in the Tweet <tt>text</tt>. If the
+      # <tt>text</tt> is <tt>nil</tt> or contains no URLs an empty array
+      # will be returned.
+      #
+      # If a block is given then it will be called for each URL.
+      def extract_urls(text, &block) # :yields: url
+        urls = extract_urls_with_indices(text).map{|u| u[:url]}
+        urls.each(&block) if block_given?
+        urls
+      end
 
-    # Extracts a list of all hashtags included in the Tweet <tt>text</tt>. If the
-    # <tt>text</tt> is <tt>nil</tt> or contains no hashtags an empty array
-    # will be returned. The array returned will not include the leading <tt>#</tt>
-    # character.
-    #
-    # If a block is given then it will be called for each hashtag.
-    # change the default '#' to &. //liujiang
-    def extract_hashtags_with_indices(text, options = {:check_url_overlap => true}) # :yields: hashtag_text, start, end
-      return [] unless text =~ /[#＃]/
+      # Extracts a list of all URLs included in the Tweet <tt>text</tt> along
+      # with the indices. If the <tt>text</tt> is <tt>nil</tt> or contains no
+      # URLs an empty array will be returned.
+      #
+      # If a block is given then it will be called for each URL.
+      def extract_urls_with_indices(text, options = {:extract_url_without_protocol => true}) # :yields: url, start, end
+        return [] unless text && (options[:extract_url_without_protocol] ? text.index(".") : text.index(":"))
+        urls = []
+        position = 0
 
-      tags = []
-      text.scan(Twitter::Regex[:valid_hashtag]) do |before, hash, hash_text|
-        match_data = $~
-        start_position = match_data.char_begin(2)
-        end_position = match_data.char_end(3)
-        after = $'
-        unless after =~ Twitter::Regex[:end_hashtag_match]
+        text.to_s.scan(Twitter::Regex[:valid_url]) do |all, before, url, protocol, domain, port, path, query|
+          valid_url_match_data = $~
+
+          start_position = valid_url_match_data.char_begin(3)
+          end_position = valid_url_match_data.char_end(3)
+
+          # If protocol is missing and domain contains non-ASCII characters,
+          # extract ASCII-only domains.
+          if !protocol
+            next if !options[:extract_url_without_protocol] || before =~ Twitter::Regex[:invalid_url_without_protocol_preceding_chars]
+            last_url = nil
+            last_url_invalid_match = nil
+            return [] if domain.nil?
+            domain.scan(Twitter::Regex[:valid_ascii_domain]) do |ascii_domain|
+              last_url = {
+                :url => ascii_domain,
+                :indices => [start_position + $~.char_begin(0),
+                             start_position + $~.char_end(0)]
+              }
+              last_url_invalid_match = ascii_domain =~ Twitter::Regex[:invalid_short_domain]
+              urls << last_url unless last_url_invalid_match
+            end
+
+            # no ASCII-only domain found. Skip the entire URL
+            next unless last_url
+
+            # last_url only contains domain. Need to add path and query if they exist.
+            if path
+              # last_url was not added. Add it to urls here.
+              urls << last_url if last_url_invalid_match
+              last_url[:url] = url.sub(domain, last_url[:url])
+              last_url[:indices][1] = end_position
+            end
+          else
+            # In the case of t.co URLs, don't allow additional path characters
+            if url =~ Twitter::Regex[:valid_tco_url]
+              url = $&
+              end_position = start_position + url.char_length
+            end
+            urls << {
+              :url => url,
+              :indices => [start_position, end_position]
+            }
+          end
+        end
+        urls.each{|url| yield url[:url], url[:indices].first, url[:indices].last} if block_given?
+        urls
+      end
+
+      # Extracts a list of all hashtags included in the Tweet <tt>text</tt>. If the
+      # <tt>text</tt> is <tt>nil</tt> or contains no hashtags an empty array
+      # will be returned. The array returned will not include the leading <tt>#</tt>
+      # character.
+      #
+      # If a block is given then it will be called for each hashtag.
+      def extract_hashtags(text, &block) # :yields: hashtag_text
+        hashtags = extract_hashtags_with_indices(text).map{|h| h[:hashtag]}
+        hashtags.each(&block) if block_given?
+        hashtags
+      end
+
+      # Extracts a list of all hashtags included in the Tweet <tt>text</tt>. If the
+      # <tt>text</tt> is <tt>nil</tt> or contains no hashtags an empty array
+      # will be returned. The array returned will not include the leading <tt>#</tt>
+      # character.
+      #
+      # If a block is given then it will be called for each hashtag.
+      # change the default '#' to &. //liujiang
+      def extract_hashtags_with_indices(text, options = {:check_url_overlap => true}) # :yields: hashtag_text, start, end
+        return [] unless text =~ /[#＃]/
+
+        tags = []
+        text.scan(Twitter::Regex[:valid_hashtag]) do |before, hash, hash_text|
+          match_data = $~
+          start_position = match_data.char_begin(2)
+          end_position = match_data.char_end(3)
+          after = $'
+        #unless after =~ Twitter::Regex[:end_hashtag_match]
+
+        puts "==>hash_text#{hash_text}"
+        puts "==>after#{after}"
+        if after =~ Twitter::Regex[:sharp_end_hashtag_match]
+
           tags << {
             :hashtag => hash_text,
             :indices => [start_position, end_position]
           }
         end
       end
+      
 
       if options[:check_url_overlap]
         # extract URLs
         urls = extract_urls_with_indices(text)
+        puts "==>url:#{urls}"
         unless urls.empty?
           tags.concat(urls)
           # remove duplicates
@@ -287,6 +294,7 @@ module Twitter
       end
 
       tags.each{|tag| yield tag[:hashtag], tag[:indices].first, tag[:indices].last} if block_given?
+      
       tags
     end
 
@@ -297,7 +305,7 @@ module Twitter
     #
     # If a block is given then it will be called for each hashtag.
     def extract_numberic_hashtags_with_indices(text, options = {:check_url_overlap => true}) # :yields: hashtag_text, start, end
-      return [] unless text =~ /[#＃]/
+      return [] unless text =~ /[#＃][0-9]/
 
       tags = []
       
@@ -307,65 +315,67 @@ module Twitter
         start_position = match_data.char_begin(2)
         end_position = match_data.char_end(3)
         after = $'
-        unless after =~ Twitter::Regex[:end_hashtag_match]
+          unless after =~ Twitter::Regex[:end_hashtag_match]
+            if (hash_text != "") then
+              tags << {
+                :numberic_hashtag => hash_text,
+                :indices => [start_position, end_position]
+              }
+            end
+          end
+        end
+
+        if options[:check_url_overlap]
+          # extract URLs
+          urls = extract_urls_with_indices(text)
+          unless urls.empty?
+            tags.concat(urls)
+            # remove duplicates
+            tags = remove_overlapping_entities(tags)
+            # remove URL entities
+            tags.reject!{|entity| !entity[:hashtag] }
+          end
+        end
+
+        tags.each{|tag| yield tag[:hashtag], tag[:indices].first, tag[:indices].last} if block_given?
+        tags
+      end
+
+      # Extracts a list of all cashtags included in the Tweet <tt>text</tt>. If the
+      # <tt>text</tt> is <tt>nil</tt> or contains no cashtags an empty array
+      # will be returned. The array returned will not include the leading <tt>$</tt>
+      # character.
+      #
+      # If a block is given then it will be called for each cashtag.
+      def extract_cashtags(text, &block) # :yields: cashtag_text
+        cashtags = extract_cashtags_with_indices(text).map{|h| h[:cashtag]}
+        cashtags.each(&block) if block_given?
+        cashtags
+      end
+
+      # Extracts a list of all cashtags included in the Tweet <tt>text</tt>. If the
+      # <tt>text</tt> is <tt>nil</tt> or contains no cashtags an empty array
+      # will be returned. The array returned will not include the leading <tt>$</tt>
+      # character.
+      #
+      # If a block is given then it will be called for each cashtag.
+      def extract_cashtags_with_indices(text) # :yields: cashtag_text, start, end
+        return [] unless text =~ /\$/
+
+        tags = []
+        text.scan(Twitter::Regex[:valid_cashtag]) do |before, dollar, cash_text|
+          match_data = $~
+          start_position = match_data.char_begin(2)
+          end_position = match_data.char_end(3)
           tags << {
-            :numberic_hashtag => hash_text,
+            :cashtag => cash_text,
             :indices => [start_position, end_position]
           }
         end
-      end
 
-      if options[:check_url_overlap]
-        # extract URLs
-        urls = extract_urls_with_indices(text)
-        unless urls.empty?
-          tags.concat(urls)
-          # remove duplicates
-          tags = remove_overlapping_entities(tags)
-          # remove URL entities
-          tags.reject!{|entity| !entity[:hashtag] }
-        end
+        tags.each{|tag| yield tag[:cashtag], tag[:indices].first, tag[:indices].last} if block_given?
+        tags
       end
-
-      tags.each{|tag| yield tag[:hashtag], tag[:indices].first, tag[:indices].last} if block_given?
-      tags
     end
 
-    # Extracts a list of all cashtags included in the Tweet <tt>text</tt>. If the
-    # <tt>text</tt> is <tt>nil</tt> or contains no cashtags an empty array
-    # will be returned. The array returned will not include the leading <tt>$</tt>
-    # character.
-    #
-    # If a block is given then it will be called for each cashtag.
-    def extract_cashtags(text, &block) # :yields: cashtag_text
-      cashtags = extract_cashtags_with_indices(text).map{|h| h[:cashtag]}
-      cashtags.each(&block) if block_given?
-      cashtags
-    end
-
-    # Extracts a list of all cashtags included in the Tweet <tt>text</tt>. If the
-    # <tt>text</tt> is <tt>nil</tt> or contains no cashtags an empty array
-    # will be returned. The array returned will not include the leading <tt>$</tt>
-    # character.
-    #
-    # If a block is given then it will be called for each cashtag.
-    def extract_cashtags_with_indices(text) # :yields: cashtag_text, start, end
-      return [] unless text =~ /\$/
-
-      tags = []
-      text.scan(Twitter::Regex[:valid_cashtag]) do |before, dollar, cash_text|
-        match_data = $~
-        start_position = match_data.char_begin(2)
-        end_position = match_data.char_end(3)
-        tags << {
-          :cashtag => cash_text,
-          :indices => [start_position, end_position]
-        }
-      end
-
-      tags.each{|tag| yield tag[:cashtag], tag[:indices].first, tag[:indices].last} if block_given?
-      tags
-    end
   end
-
-end
