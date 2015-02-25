@@ -267,9 +267,6 @@ module Twitter
           end_position = match_data.char_end(3)
           after = $'
         #unless after =~ Twitter::Regex[:end_hashtag_match]
-
-        puts "==>hash_text#{hash_text}"
-        puts "==>after#{after}"
         if after =~ Twitter::Regex[:sharp_end_hashtag_match]
 
           tags << {
@@ -283,7 +280,6 @@ module Twitter
       if options[:check_url_overlap]
         # extract URLs
         urls = extract_urls_with_indices(text)
-        puts "==>url:#{urls}"
         unless urls.empty?
           tags.concat(urls)
           # remove duplicates
