@@ -261,19 +261,19 @@ module Twitter
         return [] unless text =~ /[#＃]/
 
         tags = []
-        text.scan(Twitter::Regex[:valid_hashtag]) do |before, hash, hash_text|
+        text.scan(Twitter::Regex[:valid_hashtag]) do |hash, hash_text，hash_end|
           match_data = $~
-          start_position = match_data.char_begin(2)
+          start_position = match_data.char_begin(1)
           end_position = match_data.char_end(3)
           after = $'
         #unless after =~ Twitter::Regex[:end_hashtag_match]
-        if after =~ Twitter::Regex[:sharp_end_hashtag_match]
+        #if after =~ Twitter::Regex[:sharp_end_hashtag_match]
 
           tags << {
             :hashtag => hash_text,
             :indices => [start_position, end_position]
           }
-        end
+        #end
       end
       
 

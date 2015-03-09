@@ -358,9 +358,10 @@ module Twitter
         # this should be bug of conformance data.
         :title => "##{hashtag}"
       }.merge(options[:html_attrs])
+      
+      _hashtag = hashtag + chars[entity[:indices].last() - 1]
 
-
-      link_to_text_with_symbol(entity, hash, hashtag, href, html_attrs, options)
+      link_to_text_with_symbol(entity, hash, _hashtag, href, html_attrs, options)
     end
 
     def link_to_numberic_hashtag(entity, chars, options = {})
