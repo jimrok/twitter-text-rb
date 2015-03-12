@@ -261,7 +261,7 @@ module Twitter
         return [] unless text =~ /[#＃]/
 
         tags = []
-        text.scan(Twitter::Regex[:valid_hashtag]) do |hash, hash_text，hash_end|
+        text.scan(Twitter::Regex[:valid_hashtag]) do |hash,hash_text,hash_end|
           match_data = $~
           start_position = match_data.char_begin(1)
           end_position = match_data.char_end(3)
@@ -273,7 +273,7 @@ module Twitter
             :hashtag => hash_text,
             :indices => [start_position, end_position]
           }
-        #end
+        
       end
       
 
